@@ -67,6 +67,31 @@ body {
   cursor: pointer;
 }
 
+.api-key-trigger {
+  position: fixed;
+  top: 1rem;
+  left: 5.5rem; /* 設定ボタンの右側に配置 */
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  width: 3.5rem;
+  height: 3.5rem;
+  border: 1px solid rgba(238, 194, 216, 0.85);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.82);
+  color: #d989ac;
+  box-shadow: 0 14px 30px rgba(243, 198, 220, 0.32);
+  backdrop-filter: blur(14px);
+  cursor: pointer;
+}
+
+/* APIキーが設定されている場合の見た目 */
+.api-key-trigger.has-key {
+  background: rgba(114, 226, 209, 0.82);
+  color: #2d635f;
+  border-color: rgba(114, 226, 209, 0.85);
+}
+
 .gear-icon {
   font-size: 1.4rem;
   line-height: 1;
@@ -189,6 +214,98 @@ body {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85);
 }
 
+/* APIキー設定モーダル用のスタイル */
+.api-key-modal {
+  width: min(440px, 100%);
+  max-height: min(82vh, 760px);
+  overflow: auto;
+  padding: 1.1rem;
+  border: 1px solid rgba(238, 194, 216, 0.85);
+  border-radius: 28px;
+  background: linear-gradient(180deg, rgba(255, 253, 254, 0.98), rgba(255, 241, 248, 0.96));
+  box-shadow: 0 28px 60px rgba(227, 177, 201, 0.3);
+}
+
+.api-key-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.api-key-modal-header h1 {
+  margin: 0;
+  font-size: 1.05rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #dc8eb0;
+}
+
+.api-modal-close {
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 1px solid var(--panel-border);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.88);
+  color: var(--muted);
+  font: inherit;
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.api-key-modal-body {
+  display: grid;
+  gap: 1rem;
+}
+
+.control-buttons {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.button {
+  padding: 0.6rem 1.2rem;
+  border: 1px solid var(--panel-border);
+  border-radius: 12px;
+  font: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.button-primary {
+  background: linear-gradient(180deg, rgba(114, 226, 209, 0.9), rgba(114, 226, 209, 0.8));
+  color: #2d635f;
+  border-color: rgba(114, 226, 209, 0.85);
+}
+
+.button-primary:hover {
+  background: linear-gradient(180deg, rgba(114, 226, 209, 1), rgba(114, 226, 209, 0.9));
+  transform: translateY(-1px);
+}
+
+.button-secondary {
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--text);
+}
+
+.button-secondary:hover {
+  background: rgba(255, 255, 255, 1);
+  transform: translateY(-1px);
+}
+
+.api-key-status {
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+  font-style: italic;
+}
+
 .battlefield {
   display: grid;
   grid-template-rows: 1fr 1fr;
@@ -243,7 +360,8 @@ body {
 
 .game-card {
   display: grid;
-  place-items: center;
+  grid-template-rows: auto 1fr auto;
+  padding: 8px;
   width: var(--deck-card-width);
   min-height: var(--deck-card-height);
   border: 4px solid rgba(220, 138, 172, 0.9);
@@ -255,10 +373,126 @@ body {
   font-size: 1.1rem;
   box-shadow: 0 14px 30px rgba(243, 198, 220, 0.24);
   cursor: grab;
+  position: relative;
+  overflow: hidden;
 }
 
 .game-card.is-dragging {
   opacity: 0;
+}
+
+/* カード内部構造のスタイル */
+.card-header {
+  text-align: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+  margin-bottom: 4px;
+  color: #7a5468;
+  position: relative;
+  z-index: 1;
+}
+
+.card-content {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: 0.7rem;
+  line-height: 1.2;
+  padding: 4px;
+  color: #7a5468;
+  position: relative;
+  z-index: 1;
+}
+
+.card-footer {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 2px;
+  margin-top: 4px;
+  position: relative;
+  z-index: 1;
+}
+
+.card-stat {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 24px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(220, 138, 172, 0.3);
+  font-size: 12px;
+  position: relative;
+}
+
+.card-stat-icon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  opacity: 0.6;
+  font-size: 16px;
+  color: #7a5468;
+}
+
+.card-stat-value {
+  position: absolute;
+  bottom: 1px;
+  right: 2px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #7a5468;
+  background: rgba(255, 255, 255, 0.8);
+  padding: 0 2px;
+  border-radius: 2px;
+}
+
+/* アイドルカードの背景色とスーツ */
+.game-card.idol.hearts {
+  background: linear-gradient(180deg, rgba(255, 182, 193, 0.4), rgba(255, 192, 203, 0.3));
+}
+
+.game-card.idol.diamonds {
+  background: linear-gradient(180deg, rgba(255, 218, 185, 0.4), rgba(255, 228, 196, 0.3)); 
+}
+
+.game-card.idol.spades {
+  background: linear-gradient(180deg, rgba(173, 216, 230, 0.4), rgba(176, 224, 230, 0.3));
+}
+
+.game-card.idol.clubs {
+  background: linear-gradient(180deg, rgba(144, 238, 144, 0.4), rgba(152, 251, 152, 0.3));
+}
+
+.card-suit-icon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 5rem;
+  opacity: 0.15;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* アイドルカードのスーツごとの色設定 */
+.game-card.idol.hearts .card-suit-icon {
+  color: #ff69b4;
+}
+
+.game-card.idol.diamonds .card-suit-icon {
+  color: #ff8c00;
+}
+
+.game-card.idol.spades .card-suit-icon {
+  color: #4169e1;
+}
+
+.game-card.idol.clubs .card-suit-icon {
+  color: #32cd32;
 }
 
 .hand-slot.is-over,
@@ -288,9 +522,12 @@ body {
 .card-back {
   display: grid;
   place-items: center;
-  color: #cf729b;
-  font-weight: 700;
-  font-size: 1.05rem;
+  background-image: url("./image/card.png");
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  color: transparent;
+  font-size: 0;
 }
 
 .field {
@@ -416,6 +653,14 @@ body {
     6px 6px 0 2px rgba(220, 138, 172, 0.35),
     12px 12px 0 rgba(255, 237, 245, 0.9),
     12px 12px 0 2px rgba(220, 138, 172, 0.2);
+}
+
+.mini-slot.shared.deck-source.card-back,
+.drag-ghost.card-back {
+  background-image: url("./image/card.png");
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
 }
 
 .discard-slot {
