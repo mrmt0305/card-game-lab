@@ -306,6 +306,32 @@ body {
   font-style: italic;
 }
 
+/* シャッフルボタンのスタイル */
+.shuffle-button {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100px;
+  height: 150px;
+  border: 2px solid rgba(114, 226, 209, 0.85);
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(114, 226, 209, 0.9), rgba(114, 226, 209, 0.8));
+  color: #2d635f;
+  display: grid;
+  place-items: center;
+  font-size: 1.5rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 8px 20px rgba(114, 226, 209, 0.3);
+}
+
+.shuffle-button:hover {
+  background: linear-gradient(180deg, rgba(114, 226, 209, 1), rgba(114, 226, 209, 0.9));
+  transform: translate(-50%, -50%) translateY(-2px);
+  box-shadow: 0 12px 25px rgba(114, 226, 209, 0.4);
+}
+
 .battlefield {
   display: grid;
   grid-template-rows: 1fr 1fr;
@@ -587,6 +613,7 @@ body {
   padding: 1.25rem 0.85rem;
   background:
     linear-gradient(180deg, rgba(255, 251, 253, 0.95), rgba(255, 239, 247, 0.92));
+  position: relative;
 }
 
 .stack-count {

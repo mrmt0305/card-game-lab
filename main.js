@@ -92,6 +92,7 @@ const deckSource = document.querySelector("[data-draw-deck='shared']");
 const deckCount = document.querySelector("[data-deck-count]");
 const discardCount = document.querySelector("[data-discard-count]");
 const discardSlot = document.querySelector(".discard-slot");
+const shuffleButton = document.querySelector("#shuffle-button");
 const playerHandSlots = Array.from(document.querySelectorAll("[data-hand-slot]"));
 const cardSlots = Array.from(document.querySelectorAll(".hand-slot, .card-slot, .discard-slot"));
 
@@ -217,13 +218,85 @@ if (deckSource && deckCount && discardCount && discardSlot && playerHandSlots.le
 
   const syncDeckCount = () => {
     deckCount.textContent = String(remainingCards);
+    updateDeckVisibility();
   };
 
   const syncDiscardCount = () => {
     discardCount.textContent = String(discardSlot.querySelectorAll(".game-card").length);
   };
 
+  // デッキとシャッフルボタンの表示切り替え
+  const updateDeckVisibility = () => {
+    if (remainingCards <= 0) {
+      deckSource.style.display = 'none';
+      if (shuffleButton) shuffleButton.style.display = 'grid';
+    } else {
+      deckSource.style.display = 'grid';
+      if (shuffleButton) shuffleButton.style.display = 'none';
+    }
+  };
+
+  // シャッフル機能：捨て札をデッキに戻す
+  const shuffleDiscardToDeck = () => {
+    const discardedCards = Array.from(discardSlot.querySelectorAll(".game-card"));
+    if (discardedCards.length === 0) {
+      console.warn("捨て札がありません");
+      return;
+    }
+
+    // 捨て札のカードデータインデックスを取得
+    const discardedIndices = discardedCards.map(card => {
+      const index = parseInt(card.getAttribute('data-card-index'));
+      return isNaN(index) ? null : index;
+    }).filter(index => index !== null);
+
+    console.log("捨て札のカードインデックス:", discardedIndices);
+    console.log("捨て札のカード内容:", discardedIndices.map(i => cardDataList[i]));
+
+    // 捨て札をクリーンアップ
+    discardedCards.forEach(card => card.remove());
+    
+    // 捨て札のインデックスをシャッフル（Fisher-Yates アルゴリズム）
+    const shuffledIndices = [...discardedIndices];
+    for (let i = shuffledIndices.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffledIndices[i], shuffledIndices[j]] = [shuffledIndices[j], shuffledIndices[i]];
+    }
+    
+    // シャッフルされたインデックスを使ってデッキを再構築
+    usedCardIndices = shuffledIndices;
+    remainingCards = usedCardIndices.length;
+    cardIndex = 0; // usedCardIndices用のインデックス
+    
+    syncDeckCount();
+    syncDiscardCount();
+    updateDeckVisibility();
+    
+    console.log(`${discardedIndices.length}枚のカードをシャッフルしてデッキに戻しました`);
+    console.log("新しいデッキの順序:", shuffledIndices.map(i => cardDataList[i]));
+  };
+
+  // シャッフルボタンのイベントリスナー
+  if (shuffleButton) {
+    shuffleButton.addEventListener("click", shuffleDiscardToDeck);
+  }
+
   const getEmptyHandSlot = () => playerHandSlots.find((slot) => !slot.querySelector(".game-card"));
+  
+  // 手札と場のすべての空きスロットを取得
+  const getAnyEmptySlot = () => {
+    // まず手札スロットをチェック
+    const emptyHandSlot = playerHandSlots.find((slot) => !slot.querySelector(".game-card"));
+    if (emptyHandSlot) {
+      return emptyHandSlot;
+    }
+    
+    // 手札が満杯の場合は場のスロットをチェック
+    return cardSlots.find((slot) => 
+      !slot.classList.contains("discard-slot") && 
+      !slot.querySelector(".game-card")
+    );
+  };
 
   const setSlotState = (slot) => {
     slot.classList.toggle("has-card", Boolean(slot.querySelector(".game-card")));
@@ -232,12 +305,14 @@ if (deckSource && deckCount && discardCount && discardSlot && playerHandSlots.le
   // デッキの構成を事前に作成
   let cardDataList = []; // スプレッドシートから取得したカードデータ
   let cardIndex = 0;
+  let usedCardIndices = []; // 使用済みカードのインデックスを記録
 
   // スプレッドシートからデッキサイズを初期化
   const initializeDeck = async () => {
     cardDataList = await getCardDataFromSpreadsheet();
     remainingCards = cardDataList.length;
-    deckCount.textContent = String(cardDataList.length);
+    cardIndex = 0;
+    usedCardIndices = []; // シャッフル済みカードをクリア
     
     // カードデータをシャッフル（Fisher-Yates アルゴリズム）
     for (let i = cardDataList.length - 1; i > 0; i--) {
@@ -245,7 +320,8 @@ if (deckSource && deckCount && discardCount && discardSlot && playerHandSlots.le
       [cardDataList[i], cardDataList[j]] = [cardDataList[j], cardDataList[i]];
     }
     
-    cardIndex = 0;
+    syncDeckCount();
+    updateDeckVisibility();
     console.log(`デッキを初期化しました: ${cardDataList.length}枚`);
   };
 
@@ -256,14 +332,28 @@ if (deckSource && deckCount && discardCount && discardSlot && playerHandSlots.le
     const gameCard = document.createElement("div");
     gameCard.className = "game-card";
     
-    // スプレッドシートから取得したデータを使用
-    if (cardIndex >= cardDataList.length) {
-      console.warn("カードデータが不足しています");
-      return null;
+    let cardData;
+    let currentCardIndex;
+    
+    // シャッフル済みのカードがある場合はそれを使用
+    if (usedCardIndices.length > 0 && cardIndex < usedCardIndices.length) {
+      currentCardIndex = usedCardIndices[cardIndex];
+      cardData = cardDataList[currentCardIndex];
+      cardIndex++;
+    } else {
+      // 初期デッキまたは通常のカード生成
+      if (cardIndex >= cardDataList.length) {
+        console.warn("カードデータが不足しています");
+        return null;
+      }
+      
+      currentCardIndex = cardIndex;
+      cardData = cardDataList[cardIndex];
+      cardIndex++;
     }
     
-    const cardData = cardDataList[cardIndex];
-    cardIndex++;
+    // カードにデータインデックスを保存（シャッフル時に復元用）
+    gameCard.setAttribute('data-card-index', currentCardIndex);
     
     // カード種別の判定（日本語での比較）
     const isIdol = cardData.type === 'アイドル' || cardData.type === 'idol';
@@ -392,7 +482,7 @@ if (deckSource && deckCount && discardCount && discardSlot && playerHandSlots.le
   };
 
   deckSource.addEventListener("dragstart", (event) => {
-    if (!getEmptyHandSlot() || remainingCards <= 0) {
+    if (!getAnyEmptySlot() || remainingCards <= 0) {
       event.preventDefault();
       return;
     }
